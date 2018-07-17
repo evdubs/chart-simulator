@@ -18,6 +18,38 @@
 
 (provide show-simulator)
 
+(define (high-base-execution symbol start-date end-date)
+  (let*-values ([(dohlc-vector) (list->vector (get-date-ohlc symbol start-date end-date))]
+                [(sma-20) (simple-moving-average dohlc-vector 20)]
+                [(sma-20-slope) (delta sma-20 50)]
+                [(sma-50) (simple-moving-average dohlc-vector 50)]
+                [(sma-50-slope) (delta sma-50 50)]
+                [(satr-50) (simple-average-true-range dohlc-vector 50)]
+                [(dc-10-high dc-10-low) (donchian-channel dohlc-vector 10)]
+                [(dc-50-high dc-50-low) (donchian-channel dohlc-vector 50)]
+                [(min-length) (min (vector-length dohlc-vector)
+                                   (vector-length sma-20)
+                                   (vector-length sma-20-slope)
+                                   (vector-length sma-50)
+                                   (vector-length sma-50-slope)
+                                   (vector-length satr-50)
+                                   (vector-length dc-10-high)
+                                   (vector-length dc-10-low)
+                                   (vector-length dc-50-high)
+                                   (vector-length dc-50-low))])
+    (high-base null null
+              (history (list) (list))
+              (high-base-in (sequence->stream (vector-take-right dohlc-vector min-length))
+                           (sequence->stream (vector-take-right sma-20 min-length))
+                           (sequence->stream (vector-take-right sma-20-slope min-length))
+                           (sequence->stream (vector-take-right sma-50 min-length))
+                           (sequence->stream (vector-take-right sma-50-slope min-length))
+                           (sequence->stream (vector-take-right satr-50 min-length))
+                           (sequence->stream (vector-take-right dc-10-high min-length))
+                           (sequence->stream (vector-take-right dc-10-low min-length))
+                           (sequence->stream (vector-take-right dc-50-high min-length))
+                           (sequence->stream (vector-take-right dc-50-low min-length))))))
+
 (define (low-base-execution symbol start-date end-date)
   (let*-values ([(dohlc-vector) (list->vector (get-date-ohlc symbol start-date end-date))]
                 [(sma-20) (simple-moving-average dohlc-vector 20)]
@@ -148,13 +180,15 @@
        [label "Symbol Source"]
        [choices (list random-above-30-str random-sp-500-str)]))
 
+(define high-base-str "High Base")
+
 (define low-base-str "Low Base")
 
 (define strategy-choice
   (new choice%
        [parent simulator-input-pane]
        [label "Strategy"]
-       [choices (list low-base-str)]))
+       [choices (list high-base-str low-base-str)]))
 
 (define simulator-get-1-button
   (new button%
@@ -173,7 +207,11 @@
                                  [(equal? (send strategy-choice get-string-selection)
                                           low-base-str)
                                   (low-base-execution symbol (send start-date-field get-value)
-                                                      (send end-date-field get-value))])]
+                                                      (send end-date-field get-value))]
+                                 [(equal? (send strategy-choice get-string-selection)
+                                          high-base-str)
+                                  (high-base-execution symbol (send start-date-field get-value)
+                                                       (send end-date-field get-value))])]
                           [tweh (trade-with-exit-history symbol (history-trade lbe))]
                           [winners (filter (λ (t) (<= 0 (* (- (trade-with-exit-exit-price t)
                                                               (trade-with-exit-price t))
@@ -241,6 +279,10 @@
                                                       [(equal? (send strategy-choice get-string-selection)
                                                                low-base-str)
                                                        (low-base-execution s (send start-date-field get-value)
+                                                                           (send end-date-field get-value))]
+                                                      [(equal? (send strategy-choice get-string-selection)
+                                                               high-base-str)
+                                                       (high-base-execution s (send start-date-field get-value)
                                                                            (send end-date-field get-value))]))) symbols)]
                           [tweh (flatten (map (λ (lbe) (trade-with-exit-history
                                                         (first lbe)
