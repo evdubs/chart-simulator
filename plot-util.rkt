@@ -1,5 +1,10 @@
 #lang racket
 
+;; plot-util.rkt -- plot helpers and utilities
+;; This file is originally from ActivityLog2, a fitness activity tracker.
+;; This file was adapted for use in chart-simulator. The original plot-util
+;; work was done by Alex Harsanyi. See https://github.com/alex-hhh/ActivityLog2
+
 (require racket/gui)
 
 (provide settable-snip-canvas%)
