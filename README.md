@@ -23,5 +23,4 @@ You will need to either use data from these projects or provide a database schem
 * [quandl-wiki-prices](https://github.com/evdubs/quandl-wiki-prices)
 * [yahoo-dividends-splits](https://github.com/evdubs/yahoo-dividends-splits)
 
-As of 2018-06-11, the code uses features (candlestick plots) that are not in the current (6.12) Racket version. 
-This code should be available in Racket 7.0.
+Requires Racket 7.0 or greater.
