@@ -5,7 +5,8 @@
 (provide simple-moving-average
          simple-average-true-range
          donchian-channel
-         delta)
+         delta
+         shift)
 
 (define (vector-partition v period step)
   (if (> period (vector-length v)) (vector)
@@ -47,4 +48,9 @@
 (define (delta dv-vector period)
   (vector-map (λ (v) (dv (dv-date (vector-ref v (- period 1)))
                          (- (dv-value (vector-ref v (- period 1))) (dv-value (vector-ref v 0)))))
+              (vector-partition dv-vector period 1)))
+
+(define (shift dv-vector period)
+  (vector-map (λ (v) (dv (dv-date (vector-ref v (- period 1)))
+                         (dv-value (vector-ref v 0))))
               (vector-partition dv-vector period 1)))

@@ -12,75 +12,12 @@
                   string->date)
          "chart.rkt"
          "db-queries.rkt"
-         "strategies.rkt"
-         "structs.rkt"
-         "technical-indicators.rkt")
+         "strategy/ascending-triangle.rkt"
+         "strategy/high-base.rkt"
+         "strategy/low-base.rkt"
+         "structs.rkt")
 
 (provide show-simulator)
-
-(define (high-base-execution symbol start-date end-date)
-  (let*-values ([(dohlc-vector) (list->vector (get-date-ohlc symbol start-date end-date))]
-                [(sma-20) (simple-moving-average dohlc-vector 20)]
-                [(sma-20-slope) (delta sma-20 50)]
-                [(sma-50) (simple-moving-average dohlc-vector 50)]
-                [(sma-50-slope) (delta sma-50 50)]
-                [(satr-50) (simple-average-true-range dohlc-vector 50)]
-                [(dc-10-high dc-10-low) (donchian-channel dohlc-vector 10)]
-                [(dc-50-high dc-50-low) (donchian-channel dohlc-vector 50)]
-                [(min-length) (min (vector-length dohlc-vector)
-                                   (vector-length sma-20)
-                                   (vector-length sma-20-slope)
-                                   (vector-length sma-50)
-                                   (vector-length sma-50-slope)
-                                   (vector-length satr-50)
-                                   (vector-length dc-10-high)
-                                   (vector-length dc-10-low)
-                                   (vector-length dc-50-high)
-                                   (vector-length dc-50-low))])
-    (high-base null null
-              (history (list) (list))
-              (high-base-in (sequence->stream (vector-take-right dohlc-vector min-length))
-                           (sequence->stream (vector-take-right sma-20 min-length))
-                           (sequence->stream (vector-take-right sma-20-slope min-length))
-                           (sequence->stream (vector-take-right sma-50 min-length))
-                           (sequence->stream (vector-take-right sma-50-slope min-length))
-                           (sequence->stream (vector-take-right satr-50 min-length))
-                           (sequence->stream (vector-take-right dc-10-high min-length))
-                           (sequence->stream (vector-take-right dc-10-low min-length))
-                           (sequence->stream (vector-take-right dc-50-high min-length))
-                           (sequence->stream (vector-take-right dc-50-low min-length))))))
-
-(define (low-base-execution symbol start-date end-date)
-  (let*-values ([(dohlc-vector) (list->vector (get-date-ohlc symbol start-date end-date))]
-                [(sma-20) (simple-moving-average dohlc-vector 20)]
-                [(sma-20-slope) (delta sma-20 50)]
-                [(sma-50) (simple-moving-average dohlc-vector 50)]
-                [(sma-50-slope) (delta sma-50 50)]
-                [(satr-50) (simple-average-true-range dohlc-vector 50)]
-                [(dc-10-high dc-10-low) (donchian-channel dohlc-vector 10)]
-                [(dc-50-high dc-50-low) (donchian-channel dohlc-vector 50)]
-                [(min-length) (min (vector-length dohlc-vector)
-                                   (vector-length sma-20)
-                                   (vector-length sma-20-slope)
-                                   (vector-length sma-50)
-                                   (vector-length sma-50-slope)
-                                   (vector-length satr-50)
-                                   (vector-length dc-10-high)
-                                   (vector-length dc-10-low)
-                                   (vector-length dc-50-high)
-                                   (vector-length dc-50-low))])
-    (low-base null null
-              (history (list) (list))
-              (low-base-in (sequence->stream (vector-take-right dohlc-vector min-length))
-                           (sequence->stream (vector-take-right sma-20 min-length))
-                           (sequence->stream (vector-take-right sma-20-slope min-length))
-                           (sequence->stream (vector-take-right sma-50 min-length))
-                           (sequence->stream (vector-take-right sma-50-slope min-length))
-                           (sequence->stream (vector-take-right satr-50 min-length))
-                           (sequence->stream (vector-take-right dc-10-high min-length))
-                           (sequence->stream (vector-take-right dc-10-low min-length))
-                           (sequence->stream (vector-take-right dc-50-high min-length))
-                           (sequence->stream (vector-take-right dc-50-low min-length))))))
 
 (struct trade-with-exit (symbol date price amount exit-date exit-price test)
   #:transparent)
@@ -105,7 +42,7 @@
 
 (define (trade-with-exit-history->ratios tweh)
   (map (λ (e) (real->decimal-string (/ (- (test-target (trade-with-exit-test e)) (trade-with-exit-price e))
-                                          (- (test-entry (trade-with-exit-test e)) (test-stop (trade-with-exit-test e))))))
+                                       (- (test-entry (trade-with-exit-test e)) (test-stop (trade-with-exit-test e))))))
        tweh))
 
 (define (trade-with-exit-history->risks tweh)
@@ -184,11 +121,18 @@
 
 (define low-base-str "Low Base")
 
+(define ascending-triangle-str "Ascending Triangle")
+
+(define strategy-hash
+  (hash high-base-str high-base-execution
+        low-base-str low-base-execution
+        ascending-triangle-str ascending-triangle-execution))
+
 (define strategy-choice
   (new choice%
        [parent simulator-input-pane]
        [label "Strategy"]
-       [choices (list high-base-str low-base-str)]))
+       [choices (hash-keys strategy-hash)]))
 
 (define simulator-get-1-button
   (new button%
@@ -203,16 +147,10 @@
                                            [(equal? (send symbol-source-choice get-string-selection)
                                                     random-sp-500-str)
                                             (get-random-sp-500-symbols 1)]))]
-                          [lbe (cond
-                                 [(equal? (send strategy-choice get-string-selection)
-                                          low-base-str)
-                                  (low-base-execution symbol (send start-date-field get-value)
-                                                      (send end-date-field get-value))]
-                                 [(equal? (send strategy-choice get-string-selection)
-                                          high-base-str)
-                                  (high-base-execution symbol (send start-date-field get-value)
-                                                       (send end-date-field get-value))])]
-                          [tweh (trade-with-exit-history symbol (history-trade lbe))]
+                          [exec ((hash-ref strategy-hash (send strategy-choice get-string-selection))
+                                 (get-date-ohlc symbol (send start-date-field get-value)
+                                                (send end-date-field get-value)))]
+                          [tweh (trade-with-exit-history symbol (history-trade exec))]
                           [winners (filter (λ (t) (<= 0 (* (- (trade-with-exit-exit-price t)
                                                               (trade-with-exit-price t))
                                                            (trade-with-exit-amount t)))) tweh)]
@@ -222,7 +160,7 @@
                                            (mean (trade-with-exit-history->pcts winners)))]
                           [losers (remove* winners tweh)]
                           [lose-pct (if (= 0 (length tweh)) 0
-                                       (* (/ (length losers) (length tweh)) 100))]
+                                        (* (/ (length losers) (length tweh)) 100))]
                           [lose-pct-avg (if (= 0 (length losers)) 0
                                             (mean (trade-with-exit-history->pcts losers)))]
                           [reward-ratio (if (= 0 lose-pct-avg) 0 (/ win-pct-avg (abs lose-pct-avg)))])
@@ -252,14 +190,14 @@
                                           " Win Pct Avg: " (real->decimal-string win-pct-avg)
                                           " Lose Pct Avg: " (real->decimal-string lose-pct-avg)))
                      (send simulator-test-box set
-                          (map (λ (e) symbol) (history-test lbe))
-                          (map (λ (e) (date->string (seconds->date (dv-date e)) "~1")) (history-test lbe))
-                          (map (λ (e) (real->decimal-string (test-entry (dv-value e)))) (history-test lbe))
-                          (map (λ (e) (real->decimal-string (test-stop (dv-value e)))) (history-test lbe))
-                          (map (λ (e) (real->decimal-string (test-target (dv-value e)))) (history-test lbe)))
+                           (map (λ (e) symbol) (history-test exec))
+                           (map (λ (e) (date->string (seconds->date (dv-date e)) "~1")) (history-test exec))
+                           (map (λ (e) (real->decimal-string (test-entry (dv-value e)))) (history-test exec))
+                           (map (λ (e) (real->decimal-string (test-stop (dv-value e)))) (history-test exec))
+                           (map (λ (e) (real->decimal-string (test-target (dv-value e)))) (history-test exec)))
                      (map (λ (t i) (send simulator-test-box set-data i
                                          (list symbol (dv-date t))))
-                          (history-test lbe) (range (length (history-test lbe)))))
+                          (history-test exec) (range (length (history-test exec)))))
                    (send c enable #t))]))
 
 (define simulator-get-40-button
@@ -275,26 +213,20 @@
                                      [(equal? (send symbol-source-choice get-string-selection)
                                               random-sp-500-str)
                                       (get-random-sp-500-symbols 40)])]
-                          [lbes (map (λ (s) (list s (cond
-                                                      [(equal? (send strategy-choice get-string-selection)
-                                                               low-base-str)
-                                                       (low-base-execution s (send start-date-field get-value)
-                                                                           (send end-date-field get-value))]
-                                                      [(equal? (send strategy-choice get-string-selection)
-                                                               high-base-str)
-                                                       (high-base-execution s (send start-date-field get-value)
-                                                                           (send end-date-field get-value))]))) symbols)]
+                          [execs (map (λ (s) (list s ((hash-ref strategy-hash (send strategy-choice get-string-selection))
+                                                      (get-date-ohlc s (send start-date-field get-value)
+                                                                     (send end-date-field get-value))))) symbols)]
                           [tweh (flatten (map (λ (lbe) (trade-with-exit-history
                                                         (first lbe)
                                                         (history-trade (second lbe))))
-                                              lbes))]
+                                              execs))]
                           [tws (flatten (map (λ (lbe) (map (λ (t) (test-with-symbol (first lbe)
                                                                                     (dv-date t)
                                                                                     (test-entry (dv-value t))
                                                                                     (test-stop (dv-value t))
                                                                                     (test-target (dv-value t))))
                                                            (history-test (second lbe))))
-                                              lbes))]
+                                             execs))]
                           [winners (filter (λ (t) (<= 0 (* (- (trade-with-exit-exit-price t)
                                                               (trade-with-exit-price t))
                                                            (trade-with-exit-amount t)))) tweh)]
@@ -304,7 +236,7 @@
                                            (mean (trade-with-exit-history->pcts winners)))]
                           [losers (remove* winners tweh)]
                           [lose-pct (if (= 0 (length tweh)) 0
-                                       (* (/ (length losers) (length tweh)) 100))]
+                                        (* (/ (length losers) (length tweh)) 100))]
                           [lose-pct-avg (if (= 0 (length losers)) 0
                                             (mean (trade-with-exit-history->pcts losers)))]
                           [reward-ratio (if (= 0 lose-pct-avg) 0 (/ win-pct-avg (abs lose-pct-avg)))])
@@ -358,7 +290,7 @@
 (define simulator-trades-box (new list-box%
                                   [label "Trade History"]
                                   [parent simulator-table-pane]
-                                  [callback (λ (b e) 
+                                  [callback (λ (b e)
                                               (let ([symbol (first (send b get-data (first (send b get-selections))))]
                                                     [date (second (send b get-data (first (send b get-selections))))])
                                                 (refresh-chart symbol
@@ -371,17 +303,17 @@
 (define simulator-test-box-columns (list "Symbol" "Date" "Entry Price" "Stop Price" "Target Price"))
 
 (define simulator-test-box (new list-box%
-                                  [label "TEST History"]
-                                  [parent simulator-table-pane]
-                                  [callback (λ (b e) 
-                                              (let ([symbol (first (send b get-data (first (send b get-selections))))]
-                                                    [date (second (send b get-data (first (send b get-selections))))])
-                                                (refresh-chart symbol
-                                                               (subtract-months date 4)
-                                                               (add-months date 4))))]
-                                  [style (list 'single 'column-headers 'vertical-label)]
-                                  [columns simulator-test-box-columns]
-                                  [choices (list "")]))
+                                [label "TEST History"]
+                                [parent simulator-table-pane]
+                                [callback (λ (b e) 
+                                            (let ([symbol (first (send b get-data (first (send b get-selections))))]
+                                                  [date (second (send b get-data (first (send b get-selections))))])
+                                              (refresh-chart symbol
+                                                             (subtract-months date 4)
+                                                             (add-months date 4))))]
+                                [style (list 'single 'column-headers 'vertical-label)]
+                                [columns simulator-test-box-columns]
+                                [choices (list "")]))
 
 (define (show-simulator)
   (send simulator-frame show #t)

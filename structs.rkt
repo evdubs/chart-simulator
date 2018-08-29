@@ -1,55 +1,12 @@
 #lang racket
 
-(provide dv
-         dv-date
-         dv-value
-         dohlc
-         dohlc-date
-         dohlc-open
-         dohlc-high
-         dohlc-low
-         dohlc-close
-         test
-         test-timeframe
-         test-entry
-         test-stop
-         test-target
+(provide (struct-out dv)
+         (struct-out dohlc)
+         (struct-out test)
          test-timeframe-minus-1
-         trade
-         trade-date
-         trade-price
-         trade-amount
-         trade-test
-         position
-         position-price
-         position-amount
-         history
-         history-test
-         history-trade
-         high-base-in
-         high-base-in-dohlc
-         high-base-in-sma-20
-         high-base-in-sma-20-slope
-         high-base-in-sma-50
-         high-base-in-sma-50-slope
-         high-base-in-satr-50
-         high-base-in-dc-10-high
-         high-base-in-dc-10-low
-         high-base-in-dc-50-high
-         high-base-in-dc-50-low
-         high-base-in-drop-1
-         low-base-in
-         low-base-in-dohlc
-         low-base-in-sma-20
-         low-base-in-sma-20-slope
-         low-base-in-sma-50
-         low-base-in-sma-50-slope
-         low-base-in-satr-50
-         low-base-in-dc-10-high
-         low-base-in-dc-10-low
-         low-base-in-dc-50-high
-         low-base-in-dc-50-low
-         low-base-in-drop-1)
+         (struct-out trade)
+         (struct-out position)
+         (struct-out history))
 
 (struct dv (date value)
   #:transparent
@@ -103,51 +60,3 @@
 
 (struct history (test trade)
   #:transparent)
-
-(struct high-base-in (dohlc
-                      sma-20
-                      sma-20-slope
-                      sma-50
-                      sma-50-slope
-                      satr-50
-                      dc-10-high
-                      dc-10-low
-                      dc-50-high
-                      dc-50-low)
-  #:transparent)
-
-(define (high-base-in-drop-1 lbi)
-  (high-base-in (stream-rest (high-base-in-dohlc lbi))
-                (stream-rest (high-base-in-sma-20 lbi))
-                (stream-rest (high-base-in-sma-20-slope lbi))
-                (stream-rest (high-base-in-sma-50 lbi))
-                (stream-rest (high-base-in-sma-50-slope lbi))
-                (stream-rest (high-base-in-satr-50 lbi))
-                (stream-rest (high-base-in-dc-10-high lbi))
-                (stream-rest (high-base-in-dc-10-low lbi))
-                (stream-rest (high-base-in-dc-50-high lbi))
-                (stream-rest (high-base-in-dc-50-low lbi))))
-
-(struct low-base-in (dohlc
-                     sma-20
-                     sma-20-slope
-                     sma-50
-                     sma-50-slope
-                     satr-50
-                     dc-10-high
-                     dc-10-low
-                     dc-50-high
-                     dc-50-low)
-  #:transparent)
-
-(define (low-base-in-drop-1 lbi)
-  (low-base-in (stream-rest (low-base-in-dohlc lbi))
-               (stream-rest (low-base-in-sma-20 lbi))
-               (stream-rest (low-base-in-sma-20-slope lbi))
-               (stream-rest (low-base-in-sma-50 lbi))
-               (stream-rest (low-base-in-sma-50-slope lbi))
-               (stream-rest (low-base-in-satr-50 lbi))
-               (stream-rest (low-base-in-dc-10-high lbi))
-               (stream-rest (low-base-in-dc-10-low lbi))
-               (stream-rest (low-base-in-dc-50-high lbi))
-               (stream-rest (low-base-in-dc-50-low lbi))))

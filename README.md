@@ -4,10 +4,10 @@ This Racket application will display stock price charts and trade simulation out
 You can click on a trade execution pair in the simulator to view the corresponding stock chart.
 
 Here is a sample image of the simulator:
-![Simulator](images/simulator.png)
+![Simulator](image/simulator.png)
 
 Here is a sample image of a stock chart:
-![Chart](images/chart.png)
+![Chart](image/chart.png)
 
 The intended way to launch this application is by doing the following:
 
