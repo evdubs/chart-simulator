@@ -3,10 +3,7 @@
 (require "../structs.rkt"
          "../technical-indicators.rkt")
 
-(provide (struct-out high-base-in)
-         high-base-in-drop-1
-         high-base
-         high-base-execution)
+(provide high-base-execution)
 
 (struct high-base-in
   (dohlc

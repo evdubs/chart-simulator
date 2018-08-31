@@ -13,6 +13,7 @@
          "chart.rkt"
          "db-queries.rkt"
          "strategy/ascending-triangle.rkt"
+         "strategy/descending-triangle.rkt"
          "strategy/high-base.rkt"
          "strategy/low-base.rkt"
          "structs.rkt")
@@ -123,16 +124,19 @@
 
 (define ascending-triangle-str "Ascending Triangle")
 
+(define descending-triangle-str "Descending Triangle")
+
 (define strategy-hash
   (hash high-base-str high-base-execution
         low-base-str low-base-execution
-        ascending-triangle-str ascending-triangle-execution))
+        ascending-triangle-str ascending-triangle-execution
+        descending-triangle-str descending-triangle-execution))
 
 (define strategy-choice
   (new choice%
        [parent simulator-input-pane]
        [label "Strategy"]
-       [choices (hash-keys strategy-hash)]))
+       [choices (sort (hash-keys strategy-hash) string<?)]))
 
 (define simulator-get-1-button
   (new button%

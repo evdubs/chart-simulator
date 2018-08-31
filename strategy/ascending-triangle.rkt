@@ -3,10 +3,7 @@
 (require "../structs.rkt"
          "../technical-indicators.rkt")
 
-(provide (struct-out ascending-triangle-in)
-         ascending-triangle-in-drop-1
-         ascending-triangle
-         ascending-triangle-execution)
+(provide ascending-triangle-execution)
 
 (struct ascending-triangle-in
   (dohlc
@@ -34,9 +31,9 @@
                          (stream-rest (ascending-triangle-in-dc-25-prev-low atid))))
 
 (define (ascending-triangle t ; timeframe entry stop target
-                   p ; position
-                   h ; history
-                   i) ; market data inputs
+                            p ; position
+                            h ; history
+                            i) ; market data inputs
   (if (or (stream-empty? (ascending-triangle-in-dohlc i))
           (stream-empty? (ascending-triangle-in-sma-20 i))
           (stream-empty? (ascending-triangle-in-sma-20-slope i))
@@ -80,18 +77,18 @@
                 (> dc-25-high dc-25-prev-high)
                 (> dc-25-prev-high (* dc-25-high 99/100))
                 (> (- dc-25-low (* (- dc-25-high dc-25-low) 1/2)) dc-25-prev-low))
-                ; (< (- dc-25-high dc-25-low) (* satr 4/2))
-                ; (< dc-25-prev-high (+ dc-25-high (/ satr 5))))
+           ; (< (- dc-25-high dc-25-low) (* satr 4/2))
+           ; (< dc-25-prev-high (+ dc-25-high (/ satr 5))))
            (let ([new-test (test 20
                                  (+ dc-25-high 5/100)
                                  (- dc-25-high (* satr 2))
                                  (+ dc-25-high (* satr 4)))])
              (ascending-triangle new-test
-                       p
-                       (history (append (history-test h)
-                                        (list (dv date new-test)))
-                                (history-trade h))
-                       (ascending-triangle-in-drop-1 i)))]
+                                 p
+                                 (history (append (history-test h)
+                                                  (list (dv date new-test)))
+                                          (history-trade h))
+                                 (ascending-triangle-in-drop-1 i)))]
           ; satisfactory conditions no longer exist for entry
           [(and (not (null? t))
                 (null? p)
@@ -105,9 +102,9 @@
                 (null? p)
                 (>= open (test-entry t)))
            (ascending-triangle t (position open 1)
-                     (history (history-test h)
-                              (append (history-trade h) (list (trade date open 1 t))))
-                     (ascending-triangle-in-drop-1 i))]
+                               (history (history-test h)
+                                        (append (history-trade h) (list (trade date open 1 t))))
+                               (ascending-triangle-in-drop-1 i))]
           ; satisfactory conditions exist for entry and price range leads to execution
           [(and (not (null? t))
                 (null? p)
@@ -115,26 +112,26 @@
                 (>= high (test-entry t))
                 (<= low (test-entry t)))
            (ascending-triangle t
-                     (position (test-entry t) 1)
-                     (history (history-test h)
-                              (append (history-trade h) (list (trade date (test-entry t) 1 t))))
-                     (ascending-triangle-in-drop-1 i))]
+                               (position (test-entry t) 1)
+                               (history (history-test h)
+                                        (append (history-trade h) (list (trade date (test-entry t) 1 t))))
+                               (ascending-triangle-in-drop-1 i))]
           ; have position and open below stop
           [(and (not (null? p))
                 (<= open (test-stop t)))
            (ascending-triangle null null
-                     (history (history-test h)
-                              (append (history-trade h) (list (trade date open -1 t))))
-                     (ascending-triangle-in-drop-1 i))]
+                               (history (history-test h)
+                                        (append (history-trade h) (list (trade date open -1 t))))
+                               (ascending-triangle-in-drop-1 i))]
           ; have position and price range above stop
           [(and (not (null? p))
                 (> open (test-stop t))
                 (>= high (test-stop t))
                 (<= low (test-stop t)))
            (ascending-triangle null null
-                     (history (history-test h)
-                              (append (history-trade h) (list (trade date (test-stop t) -1 t))))
-                     (ascending-triangle-in-drop-1 i))]
+                               (history (history-test h)
+                                        (append (history-trade h) (list (trade date (test-stop t) -1 t))))
+                               (ascending-triangle-in-drop-1 i))]
           ; have position and both parts of open/close above target and stop
           [(and (not (null? p))
                 (> open (test-target t))
@@ -146,18 +143,18 @@
                                  (min open close)
                                  (test-target t))])
              (ascending-triangle new-test
-                       p
-                       (history (append (history-test h)
-                                        (list (dv date new-test)))
-                                (history-trade h))
-                       (ascending-triangle-in-drop-1 i)))]
+                                 p
+                                 (history (append (history-test h)
+                                                  (list (dv date new-test)))
+                                          (history-trade h))
+                                 (ascending-triangle-in-drop-1 i)))]
           ; have position and timeframe has ended
           [(and (not (null? p))
                 (= 0 (test-timeframe t)))
            (ascending-triangle null null
-                     (history (history-test h)
-                              (append (history-trade h) (list (trade date close -1 t))))
-                     (ascending-triangle-in-drop-1 i))]
+                               (history (history-test h)
+                                        (append (history-trade h) (list (trade date close -1 t))))
+                               (ascending-triangle-in-drop-1 i))]
           ; have position and should move stop closer to close
           [(and (not (null? p))
                 (< (* 3 satr) (- low (test-stop t))))
@@ -166,11 +163,11 @@
                                  (+ (test-stop t) satr)
                                  (test-target t))])
              (ascending-triangle new-test
-                       p
-                       (history (append (history-test h)
-                                        (list (dv date new-test)))
-                                (history-trade h))
-                       (ascending-triangle-in-drop-1 i)))]
+                                 p
+                                 (history (append (history-test h)
+                                                  (list (dv date new-test)))
+                                          (history-trade h))
+                                 (ascending-triangle-in-drop-1 i)))]
           ; have position and can do nothing
           [(not (null? p))
            (ascending-triangle (test-timeframe-minus-1 t) p h (ascending-triangle-in-drop-1 i))]
@@ -197,14 +194,14 @@
                                    (vector-length dc-25-prev-high)
                                    (vector-length dc-25-prev-low))])
     (ascending-triangle null null
-              (history (list) (list))
-              (ascending-triangle-in (sequence->stream (vector-take-right dohlc-vector min-length))
-                                     (sequence->stream (vector-take-right sma-20 min-length))
-                                     (sequence->stream (vector-take-right sma-20-slope min-length))
-                                     (sequence->stream (vector-take-right sma-50 min-length))
-                                     (sequence->stream (vector-take-right sma-50-slope min-length))
-                                     (sequence->stream (vector-take-right satr-50 min-length))
-                                     (sequence->stream (vector-take-right dc-25-high min-length))
-                                     (sequence->stream (vector-take-right dc-25-low min-length))
-                                     (sequence->stream (vector-take-right dc-25-prev-high min-length))
-                                     (sequence->stream (vector-take-right dc-25-prev-low min-length))))))
+                        (history (list) (list))
+                        (ascending-triangle-in (sequence->stream (vector-take-right dohlc-vector min-length))
+                                               (sequence->stream (vector-take-right sma-20 min-length))
+                                               (sequence->stream (vector-take-right sma-20-slope min-length))
+                                               (sequence->stream (vector-take-right sma-50 min-length))
+                                               (sequence->stream (vector-take-right sma-50-slope min-length))
+                                               (sequence->stream (vector-take-right satr-50 min-length))
+                                               (sequence->stream (vector-take-right dc-25-high min-length))
+                                               (sequence->stream (vector-take-right dc-25-low min-length))
+                                               (sequence->stream (vector-take-right dc-25-prev-high min-length))
+                                               (sequence->stream (vector-take-right dc-25-prev-low min-length))))))
