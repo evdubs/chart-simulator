@@ -1,9 +1,10 @@
-#lang racket
+#lang racket/base
 
 (require db
          db/util/datetime
          plot
          (only-in racket/date date->seconds)
+         racket/list
          "cmd-line.rkt"
          "structs.rkt")
 

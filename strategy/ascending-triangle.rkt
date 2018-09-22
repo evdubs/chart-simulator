@@ -1,6 +1,8 @@
-#lang racket
+#lang racket/base
 
-(require "../structs.rkt"
+(require racket/stream
+         racket/vector
+         "../structs.rkt"
          "../technical-indicators.rkt")
 
 (provide ascending-triangle-execution)

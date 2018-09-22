@@ -1,4 +1,4 @@
-#lang racket
+#lang racket/base
 
 (require pict
          plot
@@ -10,7 +10,6 @@
                   time-duration
                   date->time-utc
                   date->string)
-         racket/draw
          racket/gui
          "db-queries.rkt"
          "plot-util.rkt"

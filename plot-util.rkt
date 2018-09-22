@@ -1,4 +1,4 @@
-#lang racket
+#lang racket/base
 
 ;; plot-util.rkt -- plot helpers and utilities
 ;; This file is originally from ActivityLog2, a fitness activity tracker.

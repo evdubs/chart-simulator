@@ -1,4 +1,4 @@
-#lang racket
+#lang racket/base
 
 (require "chart.rkt"
          "cmd-line.rkt"

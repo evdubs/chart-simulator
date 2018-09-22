@@ -1,6 +1,8 @@
 #lang racket
 
-(require "../structs.rkt"
+(require racket/stream
+         racket/vector
+         "../structs.rkt"
          "../technical-indicators.rkt")
 
 (provide high-base-execution)

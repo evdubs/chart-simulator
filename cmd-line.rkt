@@ -1,4 +1,6 @@
-#lang racket
+#lang racket/base
+
+(require racket/cmdline)
 
 (provide db-user
          db-name

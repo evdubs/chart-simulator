@@ -1,6 +1,8 @@
-#lang racket
+#lang racket/base
 
-(require "structs.rkt")
+(require racket/sequence
+         racket/vector
+         "structs.rkt")
 
 (provide simple-moving-average
          simple-average-true-range

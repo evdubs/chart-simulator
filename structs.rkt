@@ -1,4 +1,7 @@
-#lang racket
+#lang racket/base
+
+(require racket/list
+         racket/stream) ; needed for gen:stream
 
 (provide (struct-out dv)
          (struct-out dohlc)
