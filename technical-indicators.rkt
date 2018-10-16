@@ -8,7 +8,8 @@
          simple-average-true-range
          donchian-channel
          delta
-         shift)
+         shift
+         crow-soldier-reversal)
 
 (define (vector-partition v period step)
   (if (> period (vector-length v)) (vector)
@@ -56,3 +57,35 @@
   (vector-map (λ (v) (dv (dv-date (vector-ref v (- period 1)))
                          (dv-value (vector-ref v 0))))
               (vector-partition dv-vector period 1)))
+
+; Technical indicator to count the number of consecutive crows or soldiers before a reversal.
+; There is probably a better name for this.
+; 
+; https://en.wikipedia.org/wiki/Three_black_crows
+; https://en.wikipedia.org/wiki/Three_white_soldiers
+(define (crow-soldier-reversal date-ohlc-vector period)
+  (let ([ud (vector-map (λ (v) (cond [(and (> (dohlc-high (vector-ref v 1))
+                                              (dohlc-high (vector-ref v 0)))
+                                           (> (dohlc-low (vector-ref v 1))
+                                              (dohlc-low (vector-ref v 0))))
+                                      (dv (dohlc-date (vector-ref v 1)) 1)]
+                                     [(and (< (dohlc-high (vector-ref v 1))
+                                              (dohlc-high (vector-ref v 0)))
+                                           (< (dohlc-low (vector-ref v 1))
+                                              (dohlc-low (vector-ref v 0))))
+                                      (dv (dohlc-date (vector-ref v 1)) -1)]
+                                     [else (dv (dohlc-date (vector-ref v 1)) 0)]))
+                        (vector-partition date-ohlc-vector 2 1))])
+    (vector-map (λ (v) (let ([sum (sequence-fold (λ (acc el) (+ (dv-value el) acc)) 0
+                                                 (vector-take v (- (vector-length v) 1)))])
+                         (cond [(and (= -1 (dv-value (vector-ref v (- (vector-length v) 1))))
+                                     (= sum (- (vector-length v) 1)))
+                                (dv (dv-date (vector-ref v (- (vector-length v) 1)))
+                                    sum)]
+                               [(and (= 1 (dv-value (vector-ref v (- (vector-length v) 1))))
+                                     (= (* sum -1) (- (vector-length v) 1)))
+                                (dv (dv-date (vector-ref v (- (vector-length v) 1)))
+                                    sum)]
+                               [else (dv (dv-date (vector-ref v (- (vector-length v) 1)))
+                                         0)])))
+                (vector-partition ud period 1))))

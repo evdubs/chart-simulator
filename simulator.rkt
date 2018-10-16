@@ -16,6 +16,7 @@
          "strategy/descending-triangle.rkt"
          "strategy/high-base.rkt"
          "strategy/low-base.rkt"
+         "strategy/range-pullback.rkt"
          "structs.rkt")
 
 (provide show-simulator)
@@ -126,11 +127,14 @@
 
 (define descending-triangle-str "Descending Triangle")
 
+(define range-pullback-str "Range Pullback")
+
 (define strategy-hash
   (hash high-base-str high-base-execution
         low-base-str low-base-execution
         ascending-triangle-str ascending-triangle-execution
-        descending-triangle-str descending-triangle-execution))
+        descending-triangle-str descending-triangle-execution
+        range-pullback-str range-pullback-execution))
 
 (define strategy-choice
   (new choice%
@@ -167,7 +171,8 @@
                                         (* (/ (length losers) (length tweh)) 100))]
                           [lose-pct-avg (if (= 0 (length losers)) 0
                                             (mean (trade-with-exit-history->pcts losers)))]
-                          [reward-ratio (if (= 0 lose-pct-avg) 0 (/ win-pct-avg (abs lose-pct-avg)))])
+                          [reward-ratio (if (= 0 lose-pct-avg) 0 (/ win-pct-avg (abs lose-pct-avg)))]
+                          [return-pct (+ (* win-pct win-pct-avg) (* lose-pct lose-pct-avg))])
                      ; (display-low-base-execution symbol lbe)
                      ; (displayln tweh)
                      (send simulator-trades-box set
@@ -192,7 +197,8 @@
                                           " Win Pct: " (real->decimal-string win-pct)
                                           " Lose Pct: " (real->decimal-string lose-pct)
                                           " Win Pct Avg: " (real->decimal-string win-pct-avg)
-                                          " Lose Pct Avg: " (real->decimal-string lose-pct-avg)))
+                                          " Lose Pct Avg: " (real->decimal-string lose-pct-avg)
+                                          " Return: " (real->decimal-string return-pct)))
                      (send simulator-test-box set
                            (map (λ (e) symbol) (history-test exec))
                            (map (λ (e) (date->string (seconds->date (dv-date e)) "~1")) (history-test exec))
@@ -243,7 +249,8 @@
                                         (* (/ (length losers) (length tweh)) 100))]
                           [lose-pct-avg (if (= 0 (length losers)) 0
                                             (mean (trade-with-exit-history->pcts losers)))]
-                          [reward-ratio (if (= 0 lose-pct-avg) 0 (/ win-pct-avg (abs lose-pct-avg)))])
+                          [reward-ratio (if (= 0 lose-pct-avg) 0 (/ win-pct-avg (abs lose-pct-avg)))]
+                          [return-pct (+ (* win-pct win-pct-avg) (* lose-pct lose-pct-avg))])
                      (send simulator-trades-box set
                            (map (λ (e) (trade-with-exit-symbol e)) tweh)
                            (map (λ (e) (date->string (seconds->date (trade-with-exit-date e)) "~1")) tweh)
@@ -265,7 +272,8 @@
                                           " Win Pct: " (real->decimal-string win-pct)
                                           " Lose Pct: " (real->decimal-string lose-pct)
                                           " Win Pct Avg: " (real->decimal-string win-pct-avg)
-                                          " Lose Pct Avg: " (real->decimal-string lose-pct-avg)))
+                                          " Lose Pct Avg: " (real->decimal-string lose-pct-avg)
+                                          " Return: " (real->decimal-string return-pct)))
                      (send simulator-test-box set
                            (map (λ (t) (test-with-symbol-symbol t)) tws)
                            (map (λ (t) (date->string (seconds->date (test-with-symbol-date t)) "~1")) tws)
