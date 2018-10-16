@@ -172,7 +172,7 @@
                           [lose-pct-avg (if (= 0 (length losers)) 0
                                             (mean (trade-with-exit-history->pcts losers)))]
                           [reward-ratio (if (= 0 lose-pct-avg) 0 (/ win-pct-avg (abs lose-pct-avg)))]
-                          [return-pct (+ (* win-pct win-pct-avg) (* lose-pct lose-pct-avg))])
+                          [return (+ (* win-pct win-pct-avg) (* lose-pct lose-pct-avg))])
                      ; (display-low-base-execution symbol lbe)
                      ; (displayln tweh)
                      (send simulator-trades-box set
@@ -198,7 +198,7 @@
                                           " Lose Pct: " (real->decimal-string lose-pct)
                                           " Win Pct Avg: " (real->decimal-string win-pct-avg)
                                           " Lose Pct Avg: " (real->decimal-string lose-pct-avg)
-                                          " Return: " (real->decimal-string return-pct)))
+                                          " Return: " (real->decimal-string return)))
                      (send simulator-test-box set
                            (map (λ (e) symbol) (history-test exec))
                            (map (λ (e) (date->string (seconds->date (dv-date e)) "~1")) (history-test exec))
@@ -250,7 +250,7 @@
                           [lose-pct-avg (if (= 0 (length losers)) 0
                                             (mean (trade-with-exit-history->pcts losers)))]
                           [reward-ratio (if (= 0 lose-pct-avg) 0 (/ win-pct-avg (abs lose-pct-avg)))]
-                          [return-pct (+ (* win-pct win-pct-avg) (* lose-pct lose-pct-avg))])
+                          [return (+ (* win-pct win-pct-avg) (* lose-pct lose-pct-avg))])
                      (send simulator-trades-box set
                            (map (λ (e) (trade-with-exit-symbol e)) tweh)
                            (map (λ (e) (date->string (seconds->date (trade-with-exit-date e)) "~1")) tweh)
@@ -273,7 +273,7 @@
                                           " Lose Pct: " (real->decimal-string lose-pct)
                                           " Win Pct Avg: " (real->decimal-string win-pct-avg)
                                           " Lose Pct Avg: " (real->decimal-string lose-pct-avg)
-                                          " Return: " (real->decimal-string return-pct)))
+                                          " Return: " (real->decimal-string return)))
                      (send simulator-test-box set
                            (map (λ (t) (test-with-symbol-symbol t)) tws)
                            (map (λ (t) (date->string (seconds->date (test-with-symbol-date t)) "~1")) tws)
