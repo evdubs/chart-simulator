@@ -162,7 +162,9 @@ join
   from
     yahoo.stock_split
   where
-    date >= '2000-01-01'
+    date >= '2000-01-01' and
+    new_share_amount != 0 and
+    old_share_amount != 0
   group by
     act_symbol
   order by

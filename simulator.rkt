@@ -17,6 +17,7 @@
          "strategy/high-base.rkt"
          "strategy/low-base.rkt"
          "strategy/range-pullback.rkt"
+         "strategy/range-rally.rkt"
          "structs.rkt")
 
 (provide show-simulator)
@@ -109,15 +110,15 @@
        [label "End Date"]
        [init-value "2018-01-01"]))
 
-(define random-above-30-str "Random from 2000 above $30")
+(define random-above-25-str "From 2000 above $25")
 
-(define random-sp-500-str "Random from current S&P 500")
+(define random-sp-500-str "From current S&P 500")
 
 (define symbol-source-choice
   (new choice%
        [parent simulator-input-pane]
        [label "Symbol Source"]
-       [choices (list random-above-30-str random-sp-500-str)]))
+       [choices (list random-above-25-str random-sp-500-str)]))
 
 (define high-base-str "High Base")
 
@@ -129,12 +130,15 @@
 
 (define range-pullback-str "Range Pullback")
 
+(define range-rally-str "Range Rally")
+
 (define strategy-hash
   (hash high-base-str high-base-execution
         low-base-str low-base-execution
         ascending-triangle-str ascending-triangle-execution
         descending-triangle-str descending-triangle-execution
-        range-pullback-str range-pullback-execution))
+        range-pullback-str range-pullback-execution
+        range-rally-str range-rally-execution))
 
 (define strategy-choice
   (new choice%
@@ -150,8 +154,8 @@
                    (send c enable #f)
                    (let* ([symbol (first (cond
                                            [(equal? (send symbol-source-choice get-string-selection)
-                                                    random-above-30-str)
-                                            (get-random-symbols-over-price 30.0 1)]
+                                                    random-above-25-str)
+                                            (get-random-symbols-over-price 25.0 1)]
                                            [(equal? (send symbol-source-choice get-string-selection)
                                                     random-sp-500-str)
                                             (get-random-sp-500-symbols 1)]))]
@@ -218,8 +222,8 @@
                    (send c enable #f)
                    (let* ([symbols (cond
                                      [(equal? (send symbol-source-choice get-string-selection)
-                                              random-above-30-str)
-                                      (get-random-symbols-over-price 30.0 40)]
+                                              random-above-25-str)
+                                      (get-random-symbols-over-price 25.0 40)]
                                      [(equal? (send symbol-source-choice get-string-selection)
                                               random-sp-500-str)
                                       (get-random-sp-500-symbols 40)])]
@@ -306,8 +310,8 @@
                                               (let ([symbol (first (send b get-data (first (send b get-selections))))]
                                                     [date (second (send b get-data (first (send b get-selections))))])
                                                 (refresh-chart symbol
-                                                               (subtract-months date 4)
-                                                               (add-months date 4))))]
+                                                               (subtract-months date 5)
+                                                               (add-months date 3))))]
                                   [style (list 'single 'column-headers 'vertical-label)]
                                   [columns simulator-trades-box-columns]
                                   [choices (list "")]))
@@ -321,8 +325,8 @@
                                             (let ([symbol (first (send b get-data (first (send b get-selections))))]
                                                   [date (second (send b get-data (first (send b get-selections))))])
                                               (refresh-chart symbol
-                                                             (subtract-months date 4)
-                                                             (add-months date 4))))]
+                                                             (subtract-months date 5)
+                                                             (add-months date 3))))]
                                 [style (list 'single 'column-headers 'vertical-label)]
                                 [columns simulator-test-box-columns]
                                 [choices (list "")]))
