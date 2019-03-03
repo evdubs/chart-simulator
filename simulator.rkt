@@ -13,6 +13,8 @@
          "chart.rkt"
          "db-queries.rkt"
          "strategy/ascending-triangle.rkt"
+         "strategy/bear-rally.rkt"
+         "strategy/bull-pullback.rkt"
          "strategy/descending-triangle.rkt"
          "strategy/high-base.rkt"
          "strategy/low-base.rkt"
@@ -120,25 +122,15 @@
        [label "Symbol Source"]
        [choices (list random-above-25-str random-sp-500-str)]))
 
-(define high-base-str "High Base")
-
-(define low-base-str "Low Base")
-
-(define ascending-triangle-str "Ascending Triangle")
-
-(define descending-triangle-str "Descending Triangle")
-
-(define range-pullback-str "Range Pullback")
-
-(define range-rally-str "Range Rally")
-
 (define strategy-hash
-  (hash high-base-str high-base-execution
-        low-base-str low-base-execution
-        ascending-triangle-str ascending-triangle-execution
-        descending-triangle-str descending-triangle-execution
-        range-pullback-str range-pullback-execution
-        range-rally-str range-rally-execution))
+  (hash "Bull Pullback" bull-pullback-execution
+        "Bear Rally" bear-rally-execution
+        "High Base" high-base-execution
+        "Low Base" low-base-execution
+        "Ascending Triangle" ascending-triangle-execution
+        "Descending Triangle" descending-triangle-execution
+        "Range Pullback" range-pullback-execution
+        "Range Rally" range-rally-execution))
 
 (define strategy-choice
   (new choice%
