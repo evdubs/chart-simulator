@@ -2,8 +2,8 @@
 
 (require db
          db/util/datetime
+         gregor
          plot
-         (only-in racket/date date->seconds)
          racket/list
          "cmd-line.rkt"
          "structs.rkt")
@@ -18,7 +18,7 @@
 (define (get-date-ohlc ticker-symbol start-date end-date)
   (let ([price-query (query-rows dbc "
 select
-  date,
+  date::text,
   open / mul(split_ratio) as open,
   high / mul(split_ratio) as high,
   low / mul(split_ratio) as low,
@@ -68,14 +68,14 @@ order by
                                  ticker-symbol
                                  start-date
                                  end-date)])
-    (map (λ (row) (dohlc (date->seconds (sql-datetime->srfi-date (vector-ref row 0)))
+    (map (λ (row) (dohlc (->posix (iso8601->date (vector-ref row 0)))
                          (vector-ref row 1) (vector-ref row 2) (vector-ref row 3) (vector-ref row 4)))
          price-query)))
 
 (define (get-date-volume ticker-symbol start-date end-date)
   (let ([volume-query (query-rows dbc "
 select
-  date,
+  date::text,
   volume / mul(split_ratio) as volume
 from
   (select
@@ -110,8 +110,8 @@ order by
                                   ticker-symbol
                                   start-date
                                   end-date)])
-    (map (λ (r) (dv (ivl (- (date->seconds (sql-datetime->srfi-date (vector-ref r 0))) 43200)
-                         (+ (date->seconds (sql-datetime->srfi-date (vector-ref r 0))) 43200))
+    (map (λ (r) (dv (ivl (- (->posix (iso8601->date (vector-ref r 0))) 43200)
+                         (+ (->posix (iso8601->date (vector-ref r 0))) 43200))
                     (ivl 70 (+ (vector-ref r 1) 70))))
          volume-query)))
 
