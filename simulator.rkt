@@ -1,15 +1,10 @@
 #lang racket/base
 
-(require math/statistics
-         racket/gui
-         (only-in srfi/19 date->string
-                  time-utc->date
-                  add-duration
-                  subtract-duration
-                  date->time-utc
-                  make-time
-                  time-duration
-                  string->date)
+(require gregor
+         math/statistics
+         racket/class
+         racket/list
+         racket/gui/base
          "chart.rkt"
          "db-queries.rkt"
          "strategy/ascending-triangle.rkt"
@@ -69,30 +64,6 @@
 (define (trade-with-exit-history->pcts-str tweh)
   (map (λ (e) (real->decimal-string e))
        (trade-with-exit-history->pcts tweh)))
-
-(define (display-low-base-execution symbol lbe)
-  (displayln symbol)
-  (displayln "Test History")
-
-  (map (λ (e) (printf "Date: ~a Timeframe: ~a Entry: ~a Stop: ~a Target: ~a\n"
-                      (date->string (seconds->date (dv-date e)) "~1")
-                      (test-timeframe (dv-value e))
-                      (real->decimal-string (test-entry (dv-value e)))
-                      (real->decimal-string (test-stop (dv-value e)))
-                      (real->decimal-string (test-target (dv-value e)))))
-       (history-test lbe))
-
-  (displayln "Trade History")
-
-  (map (λ (e) (printf "Date: ~a Price: ~a Amount: ~a Timeframe: ~a Entry: ~a Stop: ~a Target: ~a\n"
-                      (date->string (seconds->date (trade-date e)) "~1")
-                      (real->decimal-string (trade-price e))
-                      (trade-amount e)
-                      (real->decimal-string (test-timeframe (trade-test e)))
-                      (real->decimal-string (test-entry (trade-test e)))
-                      (real->decimal-string (test-stop (trade-test e)))
-                      (real->decimal-string (test-target (trade-test e)))))
-       (history-trade lbe)))
 
 (define simulator-frame (new frame% [label "Simulator"] [width 1000] [height 1000]))
 
@@ -173,12 +144,12 @@
                      ; (displayln tweh)
                      (send simulator-trades-box set
                            (map (λ (e) (trade-with-exit-symbol e)) tweh)
-                           (map (λ (e) (date->string (seconds->date (trade-with-exit-date e)) "~1")) tweh)
+                           (map (λ (e) (~t (posix->datetime (trade-with-exit-date e)) "yyyy-MM-dd")) tweh)
                            (map (λ (e) (real->decimal-string (trade-with-exit-price e))) tweh)
                            (map (λ (e) (real->decimal-string (test-entry (trade-with-exit-test e)))) tweh)
                            (map (λ (e) (real->decimal-string (test-stop (trade-with-exit-test e)))) tweh)
                            (map (λ (e) (real->decimal-string (test-target (trade-with-exit-test e)))) tweh)
-                           (map (λ (e) (date->string (seconds->date (trade-with-exit-exit-date e)) "~1")) tweh)
+                           (map (λ (e) (~t (posix->datetime (trade-with-exit-exit-date e)) "yyyy-MM-dd")) tweh)
                            (map (λ (e) (real->decimal-string (trade-with-exit-exit-price e))) tweh)
                            (trade-with-exit-history->ratios tweh)
                            (trade-with-exit-history->risks tweh)
@@ -197,7 +168,7 @@
                                           " Return: " (real->decimal-string return)))
                      (send simulator-test-box set
                            (map (λ (e) symbol) (history-test exec))
-                           (map (λ (e) (date->string (seconds->date (dv-date e)) "~1")) (history-test exec))
+                           (map (λ (e) (~t (posix->datetime (dv-date e)) "yyyy-MM-dd")) (history-test exec))
                            (map (λ (e) (real->decimal-string (test-entry (dv-value e)))) (history-test exec))
                            (map (λ (e) (real->decimal-string (test-stop (dv-value e)))) (history-test exec))
                            (map (λ (e) (real->decimal-string (test-target (dv-value e)))) (history-test exec)))
@@ -249,12 +220,12 @@
                           [return (+ (* win-pct win-pct-avg) (* lose-pct lose-pct-avg))])
                      (send simulator-trades-box set
                            (map (λ (e) (trade-with-exit-symbol e)) tweh)
-                           (map (λ (e) (date->string (seconds->date (trade-with-exit-date e)) "~1")) tweh)
+                           (map (λ (e) (~t (posix->datetime (trade-with-exit-date e)) "yyyy-MM-dd")) tweh)
                            (map (λ (e) (real->decimal-string (trade-with-exit-price e))) tweh)
                            (map (λ (e) (real->decimal-string (test-entry (trade-with-exit-test e)))) tweh)
                            (map (λ (e) (real->decimal-string (test-stop (trade-with-exit-test e)))) tweh)
                            (map (λ (e) (real->decimal-string (test-target (trade-with-exit-test e)))) tweh)
-                           (map (λ (e) (date->string (seconds->date (trade-with-exit-exit-date e)) "~1")) tweh)
+                           (map (λ (e) (~t (posix->datetime (trade-with-exit-exit-date e)) "yyyy-MM-dd")) tweh)
                            (map (λ (e) (real->decimal-string (trade-with-exit-exit-price e))) tweh)
                            (trade-with-exit-history->ratios tweh)
                            (trade-with-exit-history->risks tweh)
@@ -272,7 +243,7 @@
                                           " Return: " (real->decimal-string return)))
                      (send simulator-test-box set
                            (map (λ (t) (test-with-symbol-symbol t)) tws)
-                           (map (λ (t) (date->string (seconds->date (test-with-symbol-date t)) "~1")) tws)
+                           (map (λ (t) (~t (posix->datetime (test-with-symbol-date t)) "yyyy-MM-dd")) tws)
                            (map (λ (t) (real->decimal-string (test-with-symbol-entry t))) tws)
                            (map (λ (t) (real->decimal-string (test-with-symbol-stop t))) tws)
                            (map (λ (t) (real->decimal-string (test-with-symbol-target t))) tws))
@@ -285,12 +256,10 @@
                                   [parent simulator-frame]))
 
 (define (add-months d n)
-  (date->string (time-utc->date (add-duration (date->time-utc (seconds->date d))
-                                              (make-time time-duration 0 (* 60 60 24 30 n)))) "~1"))
+  (~t (+months (posix->datetime d) n) "yyyy-MM-dd"))
 
 (define (subtract-months d n)
-  (date->string (time-utc->date (subtract-duration (date->time-utc (seconds->date d))
-                                                   (make-time time-duration 0 (* 60 60 24 30 n)))) "~1"))
+  (~t (-months (posix->datetime d) n) "yyyy-MM-dd"))
 
 (define simulator-trades-box-columns (list "Symbol" "Date" "Price" "Entry Price" "Stop Price" "Target Price" "Exit Date"
                                            "Exit Price" "Ratio" "Risk" "Reward" "Pct Gain"))

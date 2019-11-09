@@ -1,16 +1,11 @@
 #lang racket/base
 
-(require pict
+(require gregor
+         pict
          plot
-         (only-in srfi/19
-                  make-time
-                  string->date
-                  time-utc->date
-                  add-duration
-                  time-duration
-                  date->time-utc
-                  date->string)
-         racket/gui
+         racket/class
+         racket/list
+         racket/gui/base
          "db-queries.rkt"
          "plot-util.rkt"
          "structs.rkt"
@@ -28,8 +23,7 @@
   (send chart-volume-canvas set-snip (chart-volume-plot)))
 
 (define (next-day d)
-  (date->string (time-utc->date (add-duration (date->time-utc (string->date d "~Y-~m-~d"))
-                                              (make-time time-duration 0 (* 60 60 24)))) "~1"))
+  (date->iso8601 (+days (iso8601->date d) 1)))
 
 (plot-y-tick-labels? #f)
 (plot-y-far-tick-labels? #t)
@@ -59,17 +53,17 @@
                                   [parent chart-input-pane]
                                   [label "Refresh"]
                                   [callback (λ (b e) (send chart-price-canvas set-snip (chart-price-plot))
-                                              (send chart-atr-canvas set-snip (chart-atr-plot))
-                                              (send chart-volume-canvas set-snip (chart-volume-plot)))]))
+                                               (send chart-atr-canvas set-snip (chart-atr-plot))
+                                               (send chart-volume-canvas set-snip (chart-volume-plot)))]))
 
 (define next-day-button (new button%
                              [parent chart-input-pane]
                              [label "Next Day"]
                              [callback (λ (b e) (send chart-start-date-field set-value (next-day (send chart-start-date-field get-value)))
-                                         (send chart-end-date-field set-value (next-day (send chart-end-date-field get-value)))
-                                         (send chart-price-canvas set-snip (chart-price-plot))
-                                         (send chart-atr-canvas set-snip (chart-atr-plot))
-                                         (send chart-volume-canvas set-snip (chart-volume-plot)))]))
+                                          (send chart-end-date-field set-value (next-day (send chart-end-date-field get-value)))
+                                          (send chart-price-canvas set-snip (chart-price-plot))
+                                          (send chart-atr-canvas set-snip (chart-atr-plot))
+                                          (send chart-volume-canvas set-snip (chart-volume-plot)))]))
 
 (define chart-plot-pane (new vertical-pane%
                              [parent chart-frame]))
@@ -99,7 +93,7 @@
                     (vl-append
                      (hc-append
                       (text "Date: " item-font)
-                      (text (date->string (seconds->date (dohlc-date (first dohlc))) "~1") item-font))
+                      (text (~t (posix->datetime (dohlc-date (first dohlc))) "yyyy-MM-dd") item-font))
                      (hc-append
                       (text "Open: " item-font)
                       (text (real->decimal-string (dohlc-open (first dohlc))) item-font))
@@ -117,15 +111,15 @@
                  #:draw-border? #f #:color background))
       (cc-superimpose r p))
     (define (get-ohlc dv d)
-      (filter (λ (e) (and (= (date-year (seconds->date d)) (date-year (seconds->date (dohlc-date e))))
-                               (= (date-month (seconds->date d)) (date-month (seconds->date (dohlc-date e))))
-                               (= (date-day (seconds->date d)) (date-day (seconds->date (dohlc-date e)))))) dv))
+      (filter (λ (e) (date=? (->date (posix->datetime d)) (->date (posix->datetime (dohlc-date e))))) dv))
     (define ((make-current-value-renderer dv) snip event x y)
       (define overlays
         (and x y (eq? (send event get-event-type) 'motion)
              (list (vrule (+ (- x (modulo (round x) 86400)) 43200) #:style 'long-dash)
                    (point-pict (vector (+ (- x (modulo (round x) 86400)) 43200) y)
-                               (make-tag (get-ohlc dv (+ x 43200))) #:anchor 'auto))))
+                               ; (make-tag (get-ohlc dv (+ x 43200)))
+                               (make-tag (get-ohlc dv x))
+                               #:anchor 'auto))))
       (send snip set-overlay-renderers overlays))
     (send snip set-mouse-event-callback (make-current-value-renderer date-ohlc-vector))
     snip))
