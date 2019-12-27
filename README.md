@@ -24,3 +24,11 @@ You will need to either use data from these projects or provide a database schem
 * [yahoo-dividends-splits](https://github.com/evdubs/yahoo-dividends-splits)
 
 Requires Racket 7.0 or greater.
+
+### Dependencies
+
+It is recommended that you start with the standard Racket distribution. With that, you will need to install the following packages:
+
+```bash
+$ raco pkg install --skip-installed gregor
+```
