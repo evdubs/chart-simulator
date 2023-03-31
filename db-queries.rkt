@@ -19,51 +19,19 @@
   (let ([price-query (query-rows dbc "
 select
   date::text,
-  open / mul(split_ratio) as open,
-  high / mul(split_ratio) as high,
-  low / mul(split_ratio) as low,
-  close / mul(split_ratio) as close
+  open,
+  high,
+  low,
+  close
 from
-  (select
-    c.date,
-    case when c.open is null
-      then c.close
-      else c.open
-    end as open,
-    case when c.high is null
-      then c.close
-      else c.high
-    end as high,
-    case when c.low is null
-      then c.close
-      else c.low
-    end as low,
-    c.close,
-    s.split_ratio
-  from
-    quandl.wiki_price c
-  left join
-    (select
-      act_symbol,
-      date,
-      split_ratio
-    from
-      quandl.wiki_price
-    where
-      act_symbol = $1 and
-      date > $2::text::date and
-      split_ratio != 1.0) s
-  on
-    c.act_symbol = s.act_symbol and
-    c.date < s.date
-  where
-    c.act_symbol = $1 and
-    c.date > $2::text::date and
-    c.date <= $3::text::date) as adjusted_ohlc
-group by
-  date, open, high, low, close
-order by
-  date;
+  iex.split_adjusted_chart(
+    $1,
+    case
+      when $2::text::date > (select max(date) from iex.chart) then (select max(date) from iex.chart)
+      else $2::text::date
+    end,
+    $3::text::date,
+    false);
 "
                                  ticker-symbol
                                  start-date
@@ -76,36 +44,16 @@ order by
   (let ([volume-query (query-rows dbc "
 select
   date::text,
-  volume / mul(split_ratio) as volume
+  volume
 from
-  (select
-    c.date,
-    c.volume,
-    s.split_ratio
-  from
-    quandl.wiki_price c
-  left join
-    (select
-      act_symbol,
-      date,
-      split_ratio
-    from
-      quandl.wiki_price
-    where
-      act_symbol = $1 and
-      date > $2::text::date and
-      split_ratio != 1.0) s
-  on
-    c.act_symbol = s.act_symbol and
-    c.date < s.date
-  where
-    c.act_symbol = $1 and
-    c.date > $2::text::date and
-    c.date <= $3::text::date) as adjusted_volume
-group by
-  date, volume
-order by
-  date;
+  iex.split_adjusted_chart(
+    $1,
+    case
+      when $2::text::date > (select max(date) from iex.chart) then (select max(date) from iex.chart)
+      else $2::text::date
+    end,
+    $3::text::date,
+    false);
 "
                                   ticker-symbol
                                   start-date
